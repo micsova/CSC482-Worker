@@ -17,35 +17,35 @@ type Artist struct {
 }
 
 type Album struct {
-	Name string
+	Name    string
 	Artists []Artist
-	ID string
-	HREF string
+	ID      string
+	HREF    string
 }
 
 type Track struct {
-	Name string
-	Artists []Artist
-	Album Album
+	Name        string
+	Artists     []Artist
+	Album       Album
 	TrackNumber int
-	ID string
-	HREF string
+	ID          string
+	HREF        string
 }
 
 type Playlist struct {
-	Name string
+	Name        string
 	Description string
-	Tracks []Track
+	Tracks      []Track
 	TotalTracks int
-	Followers int
-	ID string
-	HREF string
+	Followers   int
+	ID          string
+	HREF        string
 }
 
 func main() {
 	// Check for token
 	fmt.Println("JPE--LOGGLY_TOKEN:", os.Getenv("LOGGLY_TOKEN"))
-	//for true {
+	for {
 		tag := "Spotify"
 		logglyClient := loggly.New(tag)
 		client := &http.Client{}
@@ -136,14 +136,14 @@ func main() {
 				}
 			}
 		}
-		playlist = Playlist {
-			Name:playlistName,
-			Description:playlistDescription,
-			Tracks:playlistTracks,
-			TotalTracks:len(playlistTracks),
-			Followers:playlistFollowers,
-			ID:playlistID,
-			HREF:playlistHREF,
+		playlist = Playlist{
+			Name:        playlistName,
+			Description: playlistDescription,
+			Tracks:      playlistTracks,
+			TotalTracks: len(playlistTracks),
+			Followers:   playlistFollowers,
+			ID:          playlistID,
+			HREF:        playlistHREF,
 		}
 		var sb strings.Builder
 		sb.WriteString("Name: " + playlist.Name + "\n")
@@ -158,8 +158,8 @@ func main() {
 			sb.WriteString("\n")
 		}
 		fmt.Print(sb.String())
-		//_ = logglyClient.Send("info", sb.String())
 		logglyClient = loggly.New("Data")
-		_ = logglyClient.Send("info", "Name=" + playlist.Name + ",Followers=" + strconv.Itoa(playlist.Followers))
-	//}
+		_ = logglyClient.Send("info", "{\n\"name\": "+playlist.Name+"\",\n"+
+			"\"followers\": "+strconv.Itoa(3087179)+"\n}")
+	}
 }
