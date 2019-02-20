@@ -10,6 +10,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type Artist struct {
@@ -161,5 +162,6 @@ func main() {
 		logglyClient = loggly.New("Data")
 		_ = logglyClient.Send("info", "{\n\"name\": "+playlist.Name+"\",\n"+
 			"\"followers\": "+strconv.Itoa(3087179)+"\n}")
+		time.Sleep(5 * time.Minute)
 	}
 }
