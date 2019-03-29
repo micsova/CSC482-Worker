@@ -172,7 +172,7 @@ func table(playlist Playlist, svc *dynamodb.DynamoDB) {
 	// Create item in table Movies
 	input := &dynamodb.PutItemInput{
 		Item:      av,
-		TableName: aws.String("Spotify-New-Music-Playlist"),
+		TableName: aws.String("SpotifyGrab"),
 	}
 
 	_, err = svc.PutItem(input)
@@ -183,5 +183,5 @@ func table(playlist Playlist, svc *dynamodb.DynamoDB) {
 		os.Exit(1)
 	}
 
-	fmt.Println("Successfully added '", playlist.Name, "' (", playlist.Followers, ") to Spotify-New-Music-Playlist table")
+	fmt.Println("Successfully added '", playlist.Name, "' (", playlist.Followers, ") to SpotifyGrab table")
 }
