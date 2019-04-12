@@ -52,6 +52,7 @@ type Follower struct {
 //}
 
 type Playlist struct {
+	TableID     string `json:"unique_id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	TrackList   struct {
@@ -60,9 +61,9 @@ type Playlist struct {
 		} `json:"items"`
 	} `json:"tracks"`
 	//TrackList	Tracks		`json:"tracks"`
-	ID        string   `json:"id"`
-	HREF      string   `json:"href"`
-	Followers Follower `json:"followers"`
+	PlaylistID string   `json:"id"`
+	HREF       string   `json:"href"`
+	Followers  Follower `json:"followers"`
 }
 
 const endpoint = "https://api.spotify.com/v1/playlists/37i9dQZF1DX4JAvHpjipBk"
@@ -70,6 +71,8 @@ const endpoint = "https://api.spotify.com/v1/playlists/37i9dQZF1DX4JAvHpjipBk"
 func main() {
 	// Check for token
 	fmt.Println("JPE--LOGGLY_TOKEN:", os.Getenv("LOGGLY_TOKEN"))
+	fmt.Println("ACCESS KEY:", os.Getenv("AWS_ACCESS_KEY_ID"))
+	fmt.Println("SECRET KEY:", os.Getenv("AWS_SECRET_ACCESS_KEY"))
 	for {
 		tag := "Spotify"
 		logglyClient := loggly.New(tag)
@@ -80,23 +83,6 @@ func main() {
 
 		//Use access token to make a request
 		playlist := getPlaylist(token, client)
-
-		/*
-			//Print data locally
-			var sb strings.Builder
-			sb.WriteString("Name: " + playlist.Name + "\n")
-			sb.WriteString("Description: " + playlist.Description + "\n")
-			sb.WriteString("Followers: " + strconv.Itoa(playlist.Followers.Total) + "\n")
-			sb.WriteString("Tracks: (" + strconv.Itoa(len(playlist.SongList.Items.Tracks)) + ")\n")
-			for _, song := range playlist.SongList.Items.Tracks {
-				sb.WriteString("    " + song.Name + " by ")
-				for _, artist := range song.Artists {
-					sb.WriteString(artist.Name + ", ")
-				}
-				sb.WriteString("\n")
-			}
-			fmt.Print(sb.String())
-		*/
 
 		//Loggly Reporting
 		logglyClient = loggly.New("Data")
@@ -130,7 +116,10 @@ func getToken(client *http.Client) string {
 	req, _ := http.NewRequest(http.MethodPost, "https://accounts.spotify.com/api/token", strings.NewReader(dat.Encode()))
 	req.Header.Add("Authorization", "Basic ZjNmOGQ3MWNiZDQ2NDYwNGExZTA0MTJlZGMxM2IzOGU6M2MwMGFlNmJjNjVkNGM4ZWE2YTY4YTFhYTE4NDVkY2Y=")
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-	res, _ := client.Do(req)
+	res, err := client.Do(req)
+	if err != nil {
+		fmt.Println(err)
+	}
 	body, _ := ioutil.ReadAll(res.Body)
 	stringFile := []byte(string(body))
 	var data map[string]interface{}
@@ -155,6 +144,7 @@ func getPlaylist(token string, client *http.Client) Playlist {
 	if err := json.Unmarshal(stringFile, &playlist); err != nil {
 		fmt.Println(err)
 	}
+	playlist.TableID = time.Now().String()
 	fmt.Println("Got playlist")
 	return playlist
 }
