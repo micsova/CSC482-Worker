@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
+	"github.com/gorilla/mux"
 	"github.com/jamesPEarly/loggly"
 	"io/ioutil"
 	"net/http"
@@ -43,14 +44,6 @@ type Follower struct {
 	Total int `json:"total"`
 }
 
-//type Item struct {
-//	TrackList Track `json:"track"`
-//}
-//
-//type Tracks struct {
-//	Items []Item `json:"items"`
-//}
-
 type Playlist struct {
 	TableID     string `json:"unique_id"`
 	Name        string `json:"name"`
@@ -68,8 +61,17 @@ type Playlist struct {
 
 const endpoint = "https://api.spotify.com/v1/playlists/37i9dQZF1DX4JAvHpjipBk"
 
+var playlist Playlist
+
 func main() {
-	// Check for token
+	//Router setup
+	//Initialize
+	router := mux.NewRouter()
+	//Route handlers (endpoints)
+	router.HandleFunc("/804583589/all", getAll).Methods("GET")
+	router.HandleFunc("/804583589/status", getStatus).Methods("GET")
+
+	// Check for environment variables
 	fmt.Println("JPE--LOGGLY_TOKEN:", os.Getenv("LOGGLY_TOKEN"))
 	fmt.Println("ACCESS KEY:", os.Getenv("AWS_ACCESS_KEY_ID"))
 	fmt.Println("SECRET KEY:", os.Getenv("AWS_SECRET_ACCESS_KEY"))
@@ -82,7 +84,7 @@ func main() {
 		token := getToken(client)
 
 		//Use access token to make a request
-		playlist := getPlaylist(token, client)
+		playlist = getPlaylist(token, client)
 
 		//Loggly Reporting
 		logglyClient = loggly.New("Data")
@@ -102,13 +104,19 @@ func main() {
 		svc := dynamodb.New(sess)
 
 		//Put the playlist info into the DynamoDB table
-		table(playlist, svc)
+		table(svc)
+
+		//Run server
+		if err := http.ListenAndServe(":9290", router); err != nil {
+			fmt.Println(err)
+		}
 
 		//Wait 15 minutes before polling again
 		time.Sleep(15 * time.Minute)
 	}
 }
 
+//Uses Spotify refresh token to get an access token
 func getToken(client *http.Client) string {
 	dat := url.Values{}
 	dat.Add("grant_type", "refresh_token")
@@ -130,6 +138,7 @@ func getToken(client *http.Client) string {
 	return token
 }
 
+//Uses access token to get the "New Music Friday" playlist from Spotify
 func getPlaylist(token string, client *http.Client) Playlist {
 	req, _ := http.NewRequest(http.MethodGet, endpoint, nil)
 	req.Header.Add("Authorization", "Bearer "+token)
@@ -149,7 +158,8 @@ func getPlaylist(token string, client *http.Client) Playlist {
 	return playlist
 }
 
-func table(playlist Playlist, svc *dynamodb.DynamoDB) {
+//Puts the playlist information on a DynamoDB table
+func table(svc *dynamodb.DynamoDB) {
 	// Add each item to Movies table:
 	av, err := dynamodbattribute.MarshalMap(playlist)
 
