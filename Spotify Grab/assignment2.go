@@ -7,7 +7,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
-	"github.com/gorilla/mux"
 	"github.com/jamesPEarly/loggly"
 	"io/ioutil"
 	"net/http"
@@ -40,10 +39,6 @@ type Track struct {
 	HREF     string   `json:"href"`
 }
 
-type Follower struct {
-	Total int `json:"total"`
-}
-
 type Playlist struct {
 	TableID     string `json:"unique_id"`
 	Name        string `json:"name"`
@@ -54,9 +49,11 @@ type Playlist struct {
 		} `json:"items"`
 	} `json:"tracks"`
 	//TrackList	Tracks		`json:"tracks"`
-	PlaylistID string   `json:"id"`
-	HREF       string   `json:"href"`
-	Followers  Follower `json:"followers"`
+	PlaylistID string `json:"id"`
+	HREF       string `json:"href"`
+	Followers  struct {
+		Total int `json:"total"`
+	} `json:"followers"`
 }
 
 const endpoint = "https://api.spotify.com/v1/playlists/37i9dQZF1DX4JAvHpjipBk"
@@ -64,13 +61,6 @@ const endpoint = "https://api.spotify.com/v1/playlists/37i9dQZF1DX4JAvHpjipBk"
 var playlist Playlist
 
 func main() {
-	//Router setup
-	//Initialize
-	router := mux.NewRouter()
-	//Route handlers (endpoints)
-	router.HandleFunc("/804583589/all", getAll).Methods("GET")
-	router.HandleFunc("/804583589/status", getStatus).Methods("GET")
-
 	// Check for environment variables
 	fmt.Println("JPE--LOGGLY_TOKEN:", os.Getenv("LOGGLY_TOKEN"))
 	fmt.Println("ACCESS KEY:", os.Getenv("AWS_ACCESS_KEY_ID"))
@@ -105,11 +95,6 @@ func main() {
 
 		//Put the playlist info into the DynamoDB table
 		table(svc)
-
-		//Run server
-		if err := http.ListenAndServe(":9290", router); err != nil {
-			fmt.Println(err)
-		}
 
 		//Wait 15 minutes before polling again
 		time.Sleep(15 * time.Minute)
