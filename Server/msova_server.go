@@ -79,7 +79,7 @@ func main() {
 	// Create DynamoDB client
 	svc = dynamodb.New(sess)
 	//Run server
-	if err := http.ListenAndServe(":9290", router); err != nil {
+	if err := http.ListenAndServe(":8080", router); err != nil {
 		fmt.Println(err)
 	}
 }
